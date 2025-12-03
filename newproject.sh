@@ -61,6 +61,7 @@ cat > .gitignore <<'GITIGNORE_EOF'
 env/
 venv/
 ENV/
+.env
 env*
 ENV*
 .venv/
