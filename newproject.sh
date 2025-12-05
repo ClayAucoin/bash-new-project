@@ -62,6 +62,7 @@ env/
 venv/
 ENV/
 .env
+.env.test
 env*
 ENV*
 .venv/
