@@ -104,7 +104,14 @@ echo "3. React project (Vite)"
 echo "4. Empty project"
 echo
 
-read -rp "Choose a template (1-4): " choice
+read -rp "Choose a template (1-4) (or 'q' to cancel): " choice
+
+# Allow quitting
+if [[ "$choice" =~ ^[Qq]$ ]]; then
+  echo "Cancelled."
+  cd ../
+  return 0
+fi
 
 case "$choice" in
   1)
