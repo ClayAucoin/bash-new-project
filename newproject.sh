@@ -92,26 +92,57 @@ download_if_missing() {
   curl -fsSL -o "$dest" "$url"
 }
 
+post_create_action() {
+  echo
+  echo "What do you want to do next?"
+  echo "  1. Just create and stay in the directory"
+  echo "  2. Open in VS Code"
+  echo
+
+  read -rp "Choose (1-2): " action
+
+  case "$action" in
+    1)
+      echo "Staying in: $(pwd)"
+      ;;
+    2)
+      if command -v code >/dev/null 2>&1; then
+        code .
+        cd ../
+      else
+        echo "VS Code CLI 'code' was not found."
+        echo "Tip: In VS Code press Ctrl+Shift+P and run: 'Shell Command: Install 'code' command in PATH'"
+      fi
+      ;;
+    *)
+      echo "Invalid choice. Staying in: $(pwd)"
+      ;;
+  esac
+}
+
 # ----------------------------
 # Menu
 # ----------------------------
 echo
 echo "Select a project template:"
 echo
-echo "1. HTML"
-echo "2. Express.js"
-echo "3. React project (Vite)"
-echo "4. Empty project"
+echo "  1. HTML"
+echo "  2. Express.js"
+echo "  3. React project (Vite)"
+echo "  4. Learn JavaScript project"
+echo "  5. Learn TypeScript project"
+echo "  6. Empty project"
 echo
 
-read -rp "Choose a template (1-4) (or 'q' to cancel): " choice
+read -rp "Choose a template (1-6) (or 'q' to cancel): " choice
 
 # Allow quitting
 if [[ "$choice" =~ ^[Qq]$ ]]; then
   echo "Cancelled."
-  cd ../
-  return 0
+  exit 0
 fi
+
+CREATED="yes"
 
 case "$choice" in
   1)
@@ -161,12 +192,8 @@ case "$choice" in
     # ----------------------------
     # React (Vite) template
     # ----------------------------
-    # Common files first (so .env exists even if vite doesn't create it)
     ensure_common_files
 
-    # If the folder isn't empty, Vite may refuse. We'll allow a basic safeguard.
-    # (README/.gitignore/.env are already here, which is fine in practice, but can trip older tooling.)
-    # We'll run Vite anyway; if it fails, you'll see the error.
     if ! command -v npm >/dev/null 2>&1; then
       echo "ERROR: npm is required for the React template."
       exit 1
@@ -175,11 +202,10 @@ case "$choice" in
     # Scaffold react app into current directory
     npm create vite@latest . -- --template react
 
-    # Your extra folder + favicon (you asked for images/ at root)
+    # extra favicon(s)
     mkdir -p images
     download_if_missing "https://clayaucoin.github.io/snippets/images/favicon.ico" "images/favicon.ico"
 
-    # Also drop favicon where browsers expect it for Vite:
     mkdir -p public
     download_if_missing "https://clayaucoin.github.io/snippets/images/favicon.ico" "public/favicon.ico"
 
@@ -189,14 +215,46 @@ case "$choice" in
 
   4)
     # ----------------------------
+    # JavaScript learning template
+    # ----------------------------
+    ensure_common_files
+
+    mkdir -p src src/models src/actions
+    touch src/app.js src/index.js
+
+    git_init_commit
+    echo "JavaScript learning '$PROJECT_NAME' created in $PROJECT_PATH"
+    ;;
+
+  5)
+    # ----------------------------
+    # TypeScript learning template
+    # ----------------------------
+    ensure_common_files
+
+    mkdir -p src src/models src/actions
+    touch src/app.ts src/index.ts
+
+    git_init_commit
+    echo "TypeScript learning '$PROJECT_NAME' created in $PROJECT_PATH"
+    ;;
+
+  6)
+    # ----------------------------
     # Empty project
     # ----------------------------
     echo "Empty project '$PROJECT_NAME' folder created at $PROJECT_PATH"
     echo "You are now in: $(pwd)"
+    CREATED="empty"
     ;;
 
   *)
-    echo "Invalid choice. Run again and choose 1-4."
+    echo "Invalid choice. Run again and choose 1-6."
     exit 1
     ;;
 esac
+
+# Ask what to do after creation (skip if "empty" since it already did what you wanted)
+if [ "$CREATED" != "empty" ]; then
+  post_create_action
+fi
